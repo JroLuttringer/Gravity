@@ -1,0 +1,140 @@
+Section Header 
+  + name := VECTOR2D;
+
+Section Inherit
+  - parent_object:OBJECT := OBJECT;
+
+Section Private
+  - make (a,b:REAL) <-
+  (
+    x := a;
+    y := b;
+  );
+
+Section Public 
+  + x:REAL_64;
+  + y:REAL_64;
+  
+  - create(a,b:REAL) :SELF <-
+  (
+    + result:SELF;
+    result := SELF.clone;
+    result.make (a,b);
+    result
+  );
+
+  - copy :SELF <-
+  (
+    create(x,y)
+  );
+
+  - zero :SELF <-
+  (
+    create(0.0,0.0)
+  );
+
+  - set_x v:REAL <-
+  (
+    x := v;
+  );
+
+  - set_y v:REAL <-
+  (
+    y := v;
+  );
+
+  - set_xy (a,b:REAL) <-
+  (
+    x := a;
+    y := b;
+  );
+
+
+
+  /*REDEFINITION OPERATEUR*/
+  
+  //MOINS UNAIRE
+  - Self:SELF '-' :SELF <-
+  (
+    create (-x, -y);
+  );
+
+  //ADD VECTEUR
+  - Self:SELF '+' Left 80 other:VECTOR2D :SELF <-
+  (
+    create(x+other.x, y+other.y)
+  );
+
+  //MOINS VECTEUR
+  
+  - Self:SELF '-' Left 80 other:VECTOR2D :SELF <-
+  (
+    create( x-other.x, y-other.y)
+  );
+
+  //MUL SCALAIRE
+  - Self:SELF '*' Left 100 scalar:REAL :SELF <-
+  (
+    create( scalar*x, scalar*y)
+  );
+
+
+  //DIV SCALAIRE
+  - Self:SELF '/' Left 100 scalar:REAL :SELF <-
+  (
+    {scalar != 0};
+    create(x/scalar, y/scalar)
+  );
+
+  //DOT PRODUCT
+  - Self:SELF '#' other:VECTOR2D :REAL <-
+  (
+    Self.dot_product other
+  );
+
+  /*FIN REDEF OPERATEUR*/
+
+  - vector_from a:VECTOR2D to b:VECTOR2D <-
+  (
+    b - a
+  );
+
+  - length :REAL <-
+  (
+    (x*x + y*y).sqrt
+  );
+
+  //Prevent sqrt
+  - length_squared :REAL <-
+  (
+    (x*x + y*y)
+  );
+
+  - normalize <-
+  (
+    + m:REAL;
+    m := length;
+    make (x/m , y/m);
+  );
+
+  - normalized :SELF <-
+  (
+    Self/length
+  );
+
+  - dot_product other:VECTOR2D :REAL <-
+  (
+    x*other.x + y*other.y
+  );
+
+  - print <-
+  (
+    "(".print;x.to_integer.print;", ".print;
+    y.to_integer.print;")".print;
+  );
+
+
+
+
+
+

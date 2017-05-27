@@ -1,0 +1,111 @@
+/*MAIN FILE*/
+
+Section Header
+  + name := MAIN;
+
+Section Inherit
+  + parent_area:Expanded AREA;
+  + parent_g_expr:Expanded G_EXPR;
+
+Section Public
+  - width_min:INTEGER := 1000;
+  - height_min:INTEGER := 700;
+  - shapes:FAST_ARRAY(ABSTRACT_SHAPE) := 
+            FAST_ARRAY(ABSTRACT_SHAPE).create_with_capacity 2;
+  
+  - delay:REAL;
+  - main <-
+  (
+     + speed:VECTOR2D;
+     + box:BOX;
+     + cir:CIRCLE;
+     speed := VECTOR2D.zero;
+     shapes.add_last(CIRCLE.create ((VECTOR2D.create(50,50)),speed) radius 20);
+     shapes.add_last(CIRCLE.create ((VECTOR2D.create(100,50)),speed) radius 20);
+     shapes.add_last(CIRCLE.create ((VECTOR2D.create(150,50)),speed) radius 20);
+     shapes.add_last(CIRCLE.create ((VECTOR2D.create(200,50)),speed) radius 20);
+     shapes.add_last(CIRCLE.create ((VECTOR2D.create(250,50)),speed) radius 20);
+     shapes.add_last(CIRCLE.create ((VECTOR2D.create(350,50)),speed) radius 40);
+     shapes.add_last(CIRCLE.create ((VECTOR2D.create(450,50)),speed) radius 40);
+     cir := (CIRCLE.create ((VECTOR2D.create(850,500)), speed) radius 80);
+     cir.set_static(TRUE);
+     shapes.add_last(cir);
+     box := BOX.create (VECTOR2D.create(10.0,500.0),VECTOR2D.create(700.0,600.0)
+                    ,VECTOR2D.zero);
+     box.set_static(TRUE);
+     shapes.add_last(box);
+     VIDEO.make_size(1000+20,700+20);
+     DESK.make VIDEO with
+     (
+       G_OUT.create "Gravity" justify (G_OUT.center) /
+       G_RAW.create (Self.fix_height.fix_width)
+     );
+  );
+
+  - set_position rac:AREA at (x,y:INTEGER) size (w,h:INTEGER) <-
+  (
+    update rac from (x,y) size(w,h);
+  );
+
+  - draw (x0,y0:INTEGER) to (x1,y1:INTEGER) <-
+  (
+    clipping(x0,y0) to (x1,y1);
+    rectangle_fill(x0,y0) to (x1,y1) color black;
+    (shapes.lower).to (shapes.upper) do
+    {i:INTEGER;
+      shapes.item i.draw Self;
+    };
+  );
+
+  - receive msg:EVENT<-
+  (
+    + evt_timer:EVENT_TIMER;
+    + evt_mouse:EVENT_MOUSE;
+    evt_timer ?= msg ;
+    (evt_timer != NULL).if {
+      timer_event evt_timer;
+    };
+
+    evt_mouse ?= msg;
+    (evt_mouse != NULL).if{
+      mouse_event evt_mouse;
+    };
+    
+  );
+
+
+  - timer_event evt:EVENT_TIMER <-
+  (
+    + sp:REAL;
+    delay := delay + (evt.delay.to_real /10.0);
+    
+    sp := CONSTANTS.dt;
+    (delay > sp).if {
+      delay := delay-sp;
+      GRAVITY.next_frame(shapes);
+      refresh;
+    };
+  );
+
+  - mouse_event evt:EVENT_MOUSE <-
+  ( + win:AREA;
+    + to_add:ABSTRACT_SHAPE;
+    win := DESK.get_object (evt.x_current,evt.y_current);
+    (win != Self).if {
+      DESK.receive evt;
+    } else {
+      (evt.left_down).if{
+        to_add := CIRCLE.create (VECTOR2D.create(evt.x_current,evt.y_current), VECTOR2D.zero) radius 15;
+        shapes.add_last to_add;
+      };
+      (evt.right_down).if{
+        to_add := CIRCLE.create (VECTOR2D.create(evt.x_current,evt.y_current), VECTOR2D.zero) radius 35;
+        shapes.add_last to_add;
+
+      };
+
+    };
+      
+  );
+
+

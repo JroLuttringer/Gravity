@@ -1,0 +1,10 @@
+Section Header
+  + name := CONSTANTS;
+  
+Section Public
+ 
+  - framerate:REAL := 50.0;
+  - dt:REAL := 1.0/framerate;
+  - percent:REAL := 0.5;
+  - slop:REAL := 0.9;
+  - gravity:VECTOR2D := VECTOR2D.create(0,0.48);

@@ -1,0 +1,201 @@
+Section Header 
+  + name := REPORT;
+
+Section Inherit
+  - parent_object:OBJECT := OBJECT;
+
+Section Private
+  - make(c,d:ABSTRACT_SHAPE, pen,dist:REAL_64, n:VECTOR2D, col:BOOLEAN) <-
+  (
+    a := c;
+    b := d;
+    penetration := pen;
+    normal := n;
+    collided := col;
+    distance := dist;
+  );
+
+
+Section Public
+  + a:ABSTRACT_SHAPE;
+  + b:ABSTRACT_SHAPE;
+  + penetration:REAL;
+  + normal:VECTOR2D;
+  + collided:BOOLEAN;
+  + distance:REAL_64;
+
+   - create(a,b:ABSTRACT_SHAPE, pen:REAL, n:VECTOR2D, col:BOOLEAN, d:REAL_64) :SELF <-
+  (
+    + result:SELF;
+    result := SELF.clone;
+    result.make(a,b,pen,d,n,col);
+    result
+  );
+
+  - create_no_collision (a,b:ABSTRACT_SHAPE) :REPORT <-
+  (
+    create(a,b,0,VECTOR2D.zero,FALSE,0)
+  );
+
+  - gen_report(a,b:ABSTRACT_SHAPE) :REPORT<-
+  (
+    + result:REPORT;
+    + a_is_circle:BOOLEAN;
+    a_is_circle := a.same_dynamic_type CIRCLE;
+  
+    (a.same_dynamic_type b).if { // either BvsB or CvsC
+      (a_is_circle).if {
+        result := gen_report_circle_circle(a,b);
+      } else {
+        result := gen_report_box_box(a,b);
+      };
+    } else { // either CvsB or BvsC
+      (a_is_circle).if {
+        result := gen_report_circle_box(a,b);
+      } else {
+        result := gen_report_box_circle(a,b);
+      };
+    };
+    result
+  );
+ 
+  - gen_report_circle_circle(c,d:ABSTRACT_SHAPE) :REPORT <-
+  (
+    + a,b:CIRCLE;
+    + collision_normal, atob:VECTOR2D;
+    + distance, r, penetration:REAL_64;
+    + result:REPORT;
+    a ?= c;
+    b ?= d;
+    atob := b.position - a.position;
+    distance := atob.length_squared; //prevent comput. of sqrt if not necessary
+    r := a.radius + b.radius;
+    (distance > (r*r)).if{
+      result := create_no_collision(a,b); 
+    }else{
+      distance := distance.sqrt; //collided => need to compute distance
+     (distance != 0.0).if {
+       penetration := r - distance;
+       collision_normal := atob.normalized;
+      } else {
+        penetration := a.radius;
+        collision_normal := VECTOR2D.create(1.0,0.0);
+      };
+      result := REPORT.create(a,b,penetration,collision_normal,TRUE,distance);
+    };
+    result
+  );
+  
+  - gen_report_box_box(c,d:ABSTRACT_SHAPE) :REPORT <-
+  (
+    + a,b:BOX;
+    + distance:REAL_64;
+    + a_extent,b_extent:REAL_64;
+    + a_extenty,b_extenty:REAL_64;
+    + x_overlap,y_overlap:REAL_64;
+    + penetration:REAL_64;
+    + n:VECTOR2D;
+    + result:REPORT;
+    a ?= c;
+    b ?= d;
+    n := b.position - c.position;
+    a_extent := a.width/2;
+    b_extent := b.width/2;
+
+    x_overlap := a_extent + b_extent - n.x.abs;
+    (x_overlap > 0).if {
+      a_extenty := a.height /2;
+      b_extenty := b.height /2;
+      y_overlap = a_extenty + b_extenty - n.y.abs;
+      (y_overlap > 0).if {
+        (x_overlap > y_overlap).if {
+          (n.x < 0).if {
+            n := VECTOR2D.create(-1.0,0.0);
+          } else {
+            n := VECTOR2D.zero;
+          };
+          penetration := x_overlap;
+        } else {
+          (n.y < 0).if {
+            n := VECTOR2D.create(0.0,-1.0);
+          }else{
+            n := VECTOR2D.create(0,1);
+          };
+          penetration := y_overlap;
+        };
+      };
+      distance := (b.position - a.position).length;
+      result := SELF.create(a,b,penetration,n,TRUE,distance);
+    } else {
+      result := SELF.create_no_collision(a,b);
+    };
+    result
+  );
+
+  - gen_report_circle_box(c,d:ABSTRACT_SHAPE) :REPORT <-
+  (
+    + inside:BOOLEAN;
+    + a:CIRCLE;
+    + atob,closest_point,normal:VECTOR2D;
+    + half_y,half_x,distance,r,penetration:REAL_64;
+    + b:BOX;
+    + result:REPORT;
+    + equal:BOOLEAN;
+    a ?= c;
+    b ?= d;
+
+    inside := FALSE;
+    atob := b.position - a.position;
+    half_y := b.height/2;
+    half_x := b.width/2;
+
+    closest_point := atob.copy;
+    closest_point.set_x( MATH.clamp(closest_point.x, -half_x, half_x));
+    closest_point.set_y( MATH.clamp(closest_point.y, -half_y, half_y));
+    
+    equal := ((atob.x == closest_point.x) && {atob.y == closest_point.y});
+    
+    (equal).if {
+      inside := TRUE;
+      ( (atob.x.abs ) < (atob.y.abs ) ).if {
+        (closest_point.x > 0).if {
+          closest_point.set_x(half_x);
+        }else{
+          closest_point.set_x(-half_x);
+        };
+      }else{
+        (closest_point.y > 0).if {
+          closest_point.set_y(half_y);
+        }else{
+          closest_point.set_y(-half_y);
+        };
+      };
+    };
+   normal := atob-closest_point;
+   distance := normal.length_squared;
+   r := a.radius;
+   ((distance > (r*r)) && {!inside}).if {
+    result := create_no_collision(a,b); 
+   } else {
+    distance := distance.sqrt;
+    (inside).if {
+     // a.set_position( (a.position - closest_point));
+      normal.normalize;
+      normal := normal*(-1);
+      penetration := r - distance;
+    } else {
+     normal.normalize;
+      penetration := r - distance;
+    };
+    result := create(a,b,penetration,normal,TRUE,distance);
+  };
+  result
+ );
+
+
+ - gen_report_box_circle(a,b:ABSTRACT_SHAPE) :REPORT <-
+  (
+    + result:REPORT;
+    result := gen_report_circle_box(b,a);
+    result
+  );

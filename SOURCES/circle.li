@@ -1,0 +1,47 @@
+Section Header
+  + name := CIRCLE;
+
+Section Inherit
+  - parent_object:OBJECT := OBJECT;
+  + parent_shape:Expanded ABSTRACT_SHAPE;
+
+Section Private
+  - make (pos,sp:VECTOR2D, r:REAL) <-
+  (
+    position := pos;
+    speed := sp;
+    radius := r;
+    mass := r*5.0;
+    inv_mass := 1.0/mass;
+  );
+
+Section Public
+  + radius:REAL;
+
+  - create (pos, sp:VECTOR2D) radius (r:REAL) :SELF <-
+  (
+    + result:SELF;
+    result := clone;
+    result.make(pos,sp,r);
+    result
+  );
+
+  - draw bmp:ABSTRACT_BITMAP <-
+  (
+      (!static_object).if {
+    bmp.circle_fill(position.x.to_integer,position.y.to_integer) rayon (radius.to_integer)
+      color (bmp.red);
+
+      }
+      else {
+    bmp.circle_fill(position.x.to_integer,position.y.to_integer) rayon (radius.to_integer)
+      color (bmp.blue);
+
+      };
+  );
+
+  - set_position (v:VECTOR2D) <-
+  (
+    position := v;
+  );
+

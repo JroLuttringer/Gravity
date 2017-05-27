@@ -1,0 +1,58 @@
+Section Header
+  + name := MATH;
+
+Section Public
+
+  - print_real r:REAL <-   /*UNSTABLE*/
+  (
+    + value:INTEGER;
+    + value_mult:INTEGER;
+    + modulo:INTEGER;
+    modulo := r.floor;
+    modulo := (modulo *100_000)/100_000;
+    modulo := modulo * 100_000;
+    value := r.to_integer;
+    value.print;
+    value_mult := (r*100_000.0).to_integer;
+    value_mult := value_mult % modulo  ; 
+    ".".print;value_mult.print;"\n".print;
+  );
+
+  - min(a,b:REAL) :REAL <-
+  (
+    + res:REAL;
+    (a >= b).if {
+      res := b; 
+    } else {
+      res := a; 
+    };
+    res
+  );
+
+  - max(a,b:REAL) :REAL <-
+  (
+    + res:REAL;
+    (a >= b).if {
+      res := a;
+    } else {
+      res := b;
+    } ;
+    res
+  );
+
+  - clamp(v,mi,ma:REAL) :REAL <-
+  (
+    max(mi, min(ma,v))
+
+  );
+
+
+
+
+
+
+
+
+
+
+

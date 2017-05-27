@@ -1,0 +1,75 @@
+Section Header
+  + name := GRAVITY;
+Section Inherit
+  - parent_object:OBJECT := OBJECT;
+
+Section Public
+	
+  - next_frame (shapes:FAST_ARRAY(ABSTRACT_SHAPE))<-
+  (
+    + r:REPORT;
+    /* APPLY GRAVITY */
+    (shapes.lower).to (shapes.upper) do
+    {i:INTEGER;
+      (!shapes.item i.static_object).if {
+      shapes.item i.set_speed(shapes.item i.speed + CONSTANTS.gravity);
+      };
+      shapes.item i.set_collided(FALSE);
+    };
+
+    /*Check for collision*/
+    (shapes.lower).to (shapes.upper) do
+    {i:INTEGER;
+      (shapes.lower).to (shapes.upper) do
+      {j:INTEGER;
+        ( shapes.item i != shapes.item j).if {
+          r := REPORT.gen_report( shapes.item i, shapes.item j);
+          (r.collided).if {
+            GRAVITY.handle_collision(r);
+            shapes.item i.set_collided(TRUE);
+            shapes.item j.set_collided(TRUE);
+            GRAVITY.correction(r);
+            //r := REPORT.gen_report( shapes.item i, shapes.item j);
+          };
+        };//IF SAME SHAPE
+      };//.to J
+    }; //.to I
+
+  
+    /*APPLY SPEED VECTOR*/
+    (shapes.lower).to (shapes.upper) do
+    {i:INTEGER;
+     (!shapes.item i.collided).if{
+      shapes.item i.set_position(shapes.item i.position + shapes.item i.speed);
+      };
+    };
+  );
+
+  - handle_collision(r:REPORT) <-
+  (
+    + bounce,vel_normal,j:REAL_64;
+    + atob,rel_velocity,impulsion:VECTOR2D;
+    atob := r.b.position - r.a.position;
+    bounce := MATH.min(r.a.bounce, r.b.bounce);
+    rel_velocity := r.b.speed - r.a.speed;
+    (atob.y < 0 ).if {rel_velocity :=  (rel_velocity) * (-1.0) ;}; 
+    vel_normal := rel_velocity # r.normal;
+    ((vel_normal <= 0)).if {
+        j := -(1.0 + bounce)*vel_normal;
+        j := j/(r.a.inv_mass + r.b.inv_mass);
+        impulsion := r.normal * j;
+        r.a.set_speed(r.a.speed - (impulsion * r.a.inv_mass));
+        r.b.set_speed(r.b.speed + (impulsion * r.b.inv_mass));
+        r.a.set_position(r.a.position + r.a.speed);
+        r.b.set_position(r.b.position + r.b.speed);
+      };
+   );
+
+  - correction(r:REPORT) <-
+  (
+    + correct:VECTOR2D;
+    correct := r.normal * CONSTANTS.percent*(MATH.max(r.penetration - CONSTANTS.slop, 0.0) / (r.a.inv_mass +r.b.inv_mass));
+    r.a.set_position(r.a.position - (correct * r.a.inv_mass));
+    r.b.set_position(r.b.position + (correct * r.b.inv_mass));
+  );
+

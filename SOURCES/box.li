@@ -1,0 +1,71 @@
+
+// min -> *****************
+//        *               *
+//        *               *
+//        *               *
+//        ***************** <- max
+
+Section Header
+  + name := BOX;
+
+Section Inherit
+  - parent_object:OBJECT := OBJECT;
+  + parent_shape:Expanded ABSTRACT_SHAPE;
+
+Section Private
+  - make(mi,ma,sp:VECTOR2D) <-
+  (
+    min := mi;
+    max := ma;
+    speed := sp;
+    height := max.y - min.y;
+    width := max.x - min.x;
+    center := VECTOR2D.create(min.x+width/2.0,min.y+height/2.0);
+    position := center;
+    mass := width*2.0;
+    inv_mass := 1.0/mass;
+  );
+    
+
+Section Public
+  + min:VECTOR2D;
+  + max:VECTOR2D;
+  + height:REAL;
+  + width:REAL;
+  + center:VECTOR2D;
+
+  - create(mi,ma,sp:VECTOR2D) :SELF <-
+  (
+    + result:SELF;
+    result := SELF.clone;
+    result.make(mi,ma,sp);
+    result
+  );
+
+  - draw bmp:ABSTRACT_BITMAP <-
+  (
+        bmp.rectangle_fill (min.x.to_integer,min.y.to_integer)
+        to (max.x.to_integer,max.y.to_integer) color (bmp.blue);
+  );
+
+  - set_min (new_min:VECTOR2D) <-
+  (
+    min := new_min;
+  );
+
+  - set_max (new_max:VECTOR2D)<-
+  (
+    max := new_max;
+  );
+
+  - set_position (v:VECTOR2D) <-
+  (
+    + changed_by:VECTOR2D;
+    changed_by :=  v- position;
+    position := v;
+    set_max(max + changed_by);
+    set_min(min + changed_by);
+  );
+
+
+

@@ -1,0 +1,44 @@
+// Prototype ABSTRACT_SHAPE
+
+Section Header
+  + name := ABSTRACT_SHAPE;
+
+Section Inherit
+  - parent_object:OBJECT := OBJECT;
+
+Section Public
+  + collided:BOOLEAN := FALSE;
+  + position:VECTOR2D;
+  + speed:VECTOR2D;
+  + bounce:REAL := 0.9 ;
+  + static_object:BOOLEAN := FALSE;
+  + mass:REAL;
+  + inv_mass:REAL;
+  
+  - draw bmp:ABSTRACT_BITMAP <-
+  (
+    deferred ;
+  );
+
+  - set_collided(a:BOOLEAN) <-
+  (
+    collided := a;
+  );
+
+  - set_position (v:VECTOR2D) <-
+  (
+   deferred; 
+  );
+
+  - set_static(b:BOOLEAN) <-
+  (
+    static_object := b ;
+    inv_mass := 0;
+    mass := 0;
+  );
+
+  - set_speed(s:VECTOR2D) <-
+  (
+    speed := s;
+  );
+
